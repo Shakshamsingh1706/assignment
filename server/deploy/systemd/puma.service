@@ -1,0 +1,16 @@
+[Unit]
+Description=Puma application server for Spree
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/var/www/spree/current
+Environment=RAILS_ENV=production
+Environment=PATH=/home/deploy/.rbenv/shims:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/deploy/.rbenv/shims/bundle exec puma -C config/puma.rb
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,36 @@
+name: Deploy to production
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.1"
+          bundler-cache: true
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          SSH_HOST=$(echo "${{ secrets.DEPLOY_HOST }}" | sed 's/.*@//')
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy
+        env:
+          CAPISTRANO_REPO: https://github.com/${{ github.repository }}.git
+          CAPISTRANO_BRANCH: master
+          CAPISTRANO_SERVER: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/deploy_key
+          bundle exec cap production deploy
